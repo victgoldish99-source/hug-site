@@ -151,14 +151,21 @@
 </div>
 
 <script>
-  // === НАСТРОЙКИ ===
-  // URL из Pipedream (вебхук)
   const WEBHOOK_URL = "https://eom0vzgy52dfuen.m.pipedream.net";
-
-  // Кто нажимает кнопку (имя, которое придёт в уведомлении)
-  // Замени на "Гриша", когда дашь этот файл ему
   const MY_NAME = "Вика";
-  // ==================
+
+  const messages = [
+    '🤗 Обнимаю тебя крепко-крепко',
+    '💕 Обнимаю нежно-нежно',
+    '🐻 Обнимаю как медведь',
+    '💫 Обнимаю через все расстояния',
+    '💛 Скучаю и обнимаю',
+    '🌟 Обнимаю так, что не отпущу',
+    '✨ Просто обнимаю. Без повода',
+    '💖 Обнимаю тебя прямо сейчас',
+    '🌸 Обнимаю тепло-тепло',
+    '🫂 Обнимаю до самого утра'
+  ];
 
   // Звёзды на фоне
   const starsContainer = document.getElementById('stars');
@@ -175,33 +182,20 @@
     starsContainer.appendChild(star);
   }
 
-  const messages = [
-    'Обнимаю тебя крепко-крепко 🤗',
-    'Ты самый лучший. Помни это 💛',
-    'Я рядом, даже когда далеко ✨',
-    'Скучаю. Обнимаю. Люблю 💕',
-    'Ты справляешься. Я вижу 🌟',
-    'Обнимаю тебя через все расстояния 💫',
-  ];
-
   async function sendHug() {
-    // 1. Показываем сообщение
     const msg = document.getElementById('message');
-    msg.textContent = messages[Math.floor(Math.random() * messages.length)];
+    const chosenMessage = messages[Math.floor(Math.random() * messages.length)];
+    msg.textContent = chosenMessage;
     msg.classList.add('show');
 
-    // 2. Сердечки
     for (let i = 0; i < 15; i++) createHeart();
-
-    // 3. Вибрация (если поддерживается)
     if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
 
-    // 4. Отправляем уведомление через Pipedream
     try {
       await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `${MY_NAME} обнимает тебя 🤗` })
+        body: JSON.stringify({ message: `${MY_NAME}: ${chosenMessage}` })
       });
     } catch (e) {
       console.log('Ошибка отправки:', e);
