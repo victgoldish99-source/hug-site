@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Обнимаю тебя</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #2b1055 0%, #7597de 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    color: white;
+    padding: 20px;
+  }
+
+  .stars {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0; left: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 3s infinite ease-in-out;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.3); }
+  }
+
+  .container {
+    text-align: center;
+    z-index: 10;
+    padding: 20px;
+    max-width: 500px;
+  }
+
+  h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+    font-weight: 300;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 20px rgba(255, 255, 255, 0.3);
+  }
+
+  .subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 40px;
+    font-size: 0.95em;
+    line-height: 1.5;
+  }
+
+  .hug-btn {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: radial-gradient(circle at 30% 30%, #ff9a9e, #f5576c, #c0392b);
+    box-shadow:
+      0 0 0 0 rgba(245, 87, 108, 0.7),
+      0 10px 40px rgba(245, 87, 108, 0.5),
+      inset 0 -10px 20px rgba(0, 0, 0, 0.2),
+      inset 0 10px 20px rgba(255, 255, 255, 0.3);
+    font-size: 1.2em;
+    color: white;
+    font-family: inherit;
+    transition: transform 0.2s ease;
+    animation: pulse 2.5s infinite;
+    z-index: 10;
+  }
+  .hug-btn:hover { transform: scale(1.08); }
+  .hug-btn:active { transform: scale(0.95); }
+  .hug-btn span {
+    display: block;
+    font-size: 2.5em;
+    margin-bottom: 5px;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 0 rgba(245, 87, 108, 0.7),
+        0 10px 40px rgba(245, 87, 108, 0.5),
+        inset 0 -10px 20px rgba(0, 0, 0, 0.2),
+        inset 0 10px 20px rgba(255, 255, 255, 0.3);
+    }
+    50% {
+      box-shadow:
+        0 0 0 25px rgba(245, 87, 108, 0),
+        0 10px 50px rgba(245, 87, 108, 0.8),
+        inset 0 -10px 20px rgba(0, 0, 0, 0.2),
+        inset 0 10px 20px rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  .message {
+    margin-top: 30px;
+    font-size: 1.2em;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease;
+    min-height: 40px;
+    text-shadow: 0 2px 15px rgba(255, 255, 255, 0.5);
+  }
+  .message.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .heart {
+    position: fixed;
+    font-size: 2em;
+    pointer-events: none;
+    z-index: 100;
+    animation: flyUp 2.5s ease-out forwards;
+  }
+  @keyframes flyUp {
+    0% { opacity: 1; transform: translate(0, 0) scale(0.5) rotate(0deg); }
+    100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(1.5) rotate(var(--r)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <h1>Обнимаю тебя</h1>
+  <p class="subtitle">Нажми на кнопку — и объятие улетит к тебе</p>
+
+  <button class="hug-btn" onclick="sendHug()">
+    <span>🤗</span>
+    Обнять
+  </button>
+
+  <div class="message" id="message"></div>
+</div>
+
+<script>
+  // === НАСТРОЙКИ ===
+  // URL из Pipedream (вебхук)
+  const WEBHOOK_URL = "https://eom0vzgy52dfuen.m.pipedream.net";
+
+  // Кто нажимает кнопку (имя, которое придёт в уведомлении)
+  // Замени на "Гриша", когда дашь этот файл ему
+  const MY_NAME = "Вика";
+  // ==================
+
+  // Звёзды на фоне
+  const starsContainer = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 3 + 1;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.animationDelay = Math.random() * 3 + 's';
+    star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+    starsContainer.appendChild(star);
+  }
+
+  const messages = [
+    'Обнимаю тебя крепко-крепко 🤗',
+    'Ты самый лучший. Помни это 💛',
+    'Я рядом, даже когда далеко ✨',
+    'Скучаю. Обнимаю. Люблю 💕',
+    'Ты справляешься. Я вижу 🌟',
+    'Обнимаю тебя через все расстояния 💫',
+  ];
+
+  async function sendHug() {
+    // 1. Показываем сообщение
+    const msg = document.getElementById('message');
+    msg.textContent = messages[Math.floor(Math.random() * messages.length)];
+    msg.classList.add('show');
+
+    // 2. Сердечки
+    for (let i = 0; i < 15; i++) createHeart();
+
+    // 3. Вибрация (если поддерживается)
+    if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+
+    // 4. Отправляем уведомление через Pipedream
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `${MY_NAME} обнимает тебя 🤗` })
+      });
+    } catch (e) {
+      console.log('Ошибка отправки:', e);
+    }
+  }
+
+  function createHeart() {
+    const heart = document.createElement('div');
+    heart.className = 'heart';
+    heart.textContent = ['💖','💕','💗','💛','🤗','✨'][Math.floor(Math.random()*6)];
+
+    const btn = document.querySelector('.hug-btn');
+    const rect = btn.getBoundingClientRect();
+    heart.style.left = (rect.left + rect.width/2) + 'px';
+    heart.style.top = (rect.top + rect.height/2) + 'px';
+
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.random() * 300 + 150;
+    heart.style.setProperty('--x', Math.cos(angle) * distance + 'px');
+    heart.style.setProperty('--y', (Math.sin(angle) * distance - 200) + 'px');
+    heart.style.setProperty('--r', (Math.random() - 0.5) * 720 + 'deg');
+
+    document.body.appendChild(heart);
+    setTimeout(() => heart.remove(), 2600);
+  }
+</script>
+</body>
+</html>
