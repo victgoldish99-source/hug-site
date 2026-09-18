@@ -121,6 +121,14 @@
     transform: translateY(0);
   }
 
+  .counter {
+    margin-top: 15px;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.6);
+    min-height: 20px;
+    transition: all 0.3s ease;
+  }
+
   .heart {
     position: fixed;
     font-size: 2em;
@@ -131,6 +139,85 @@
   @keyframes flyUp {
     0% { opacity: 1; transform: translate(0, 0) scale(0.5) rotate(0deg); }
     100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(1.5) rotate(var(--r)); }
+  }
+
+  .secret-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 30px;
+    animation: fadeIn 0.5s ease;
+  }
+  .secret-overlay.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .secret-content {
+    max-width: 500px;
+    text-align: center;
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    padding: 40px 30px;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(240, 147, 251, 0.5);
+    animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .secret-content h2 {
+    font-size: 2em;
+    margin-bottom: 15px;
+    color: white;
+  }
+
+  .secret-content p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: white;
+    margin-bottom: 15px;
+  }
+
+  .secret-content .big-heart {
+    font-size: 5em;
+    display: block;
+    margin-bottom: 15px;
+    animation: beat 1s infinite;
+  }
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  .secret-close {
+    margin-top: 20px;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 1em;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.3s;
+  }
+  .secret-close:hover { background: rgba(255, 255, 255, 0.35); }
+
+  .confetti {
+    position: fixed;
+    font-size: 1.5em;
+    pointer-events: none;
+    z-index: 1100;
+    animation: confettiFall 3s ease-in forwards;
+  }
+  @keyframes confettiFall {
+    0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
   }
 </style>
 </head>
@@ -148,6 +235,18 @@
   </button>
 
   <div class="message" id="message"></div>
+  <p class="counter" id="counter"></p>
+</div>
+
+<div class="secret-overlay" id="secretOverlay">
+  <div class="secret-content">
+    <span class="big-heart">💖</span>
+    <h2>Ты нашёл пасхалку!</h2>
+    <p>10 нажатий подряд — и вот что я хочу тебе сказать:</p>
+    <p><strong>Ты — моё самое любимое чудо. Спасибо, что ты есть. Каждый день с тобой — подарок. 💕</strong></p>
+    <p style="font-size: 0.9em; opacity: 0.8;">(и тебе только что прилетело секретное сообщение в Telegram)</p>
+    <button class="secret-close" onclick="closeSecret()">Обнимаю в ответ 🤗</button>
+  </div>
 </div>
 
 <script>
@@ -167,7 +266,9 @@
     '🫂 Обнимаю до самого утра'
   ];
 
-  // Звёзды на фоне
+  const SECRET_TEXT = `🎁 СЕКРЕТНОЕ ОБЪЯТИЕ ОТ ГРИШИ!\n\n10 нажатий подряд — и вот что я хочу тебе сказать:\n\nТы — моё самое любимое чудо. Спасибо, что ты есть. Каждый день с тобой — подарок. 💕\n\nОбнимаю тебя так крепко, что никакие расстояния не помешают.`;
+
+  // Звёзды
   const starsContainer = document.getElementById('stars');
   for (let i = 0; i < 80; i++) {
     const star = document.createElement('div');
@@ -182,6 +283,44 @@
     starsContainer.appendChild(star);
   }
 
+  // === СЧЁТЧИК ===
+  function getCount() {
+    return parseInt(localStorage.getItem('hug_count_grisha') || '0', 10);
+  }
+  function incrementCount() {
+    const newCount = getCount() + 1;
+    localStorage.setItem('hug_count_grisha', newCount);
+    return newCount;
+  }
+  function updateCounterDisplay(count) {
+    const counterEl = document.getElementById('counter');
+    if (counterEl && count > 0) {
+      counterEl.textContent = `Ты обнял уже ${count} раз 💕`;
+    }
+  }
+
+  // === СЕРИЯ ===
+  function getStreak() {
+    const last = parseInt(localStorage.getItem('hug_streak_time_grisha') || '0', 10);
+    const now = Date.now();
+    if (now - last > 3000) return 0;
+    return parseInt(localStorage.getItem('hug_streak_grisha') || '0', 10);
+  }
+  function updateStreak() {
+    const current = getStreak() + 1;
+    localStorage.setItem('hug_streak_grisha', current);
+    localStorage.setItem('hug_streak_time_grisha', Date.now());
+    return current;
+  }
+  function resetStreak() {
+    localStorage.setItem('hug_streak_grisha', 0);
+    localStorage.setItem('hug_streak_time_grisha', 0);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    updateCounterDisplay(getCount());
+  });
+
   async function sendHug() {
     const msg = document.getElementById('message');
     const chosenMessage = messages[Math.floor(Math.random() * messages.length)];
@@ -190,6 +329,26 @@
 
     for (let i = 0; i < 15; i++) createHeart();
     if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+
+    const newCount = incrementCount();
+    updateCounterDisplay(newCount);
+
+    const streak = updateStreak();
+
+    if (streak >= 10) {
+      resetStreak();
+      showSecret();
+      try {
+        await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: SECRET_TEXT })
+        });
+      } catch (e) {
+        console.log('Ошибка отправки:', e);
+      }
+      return;
+    }
 
     try {
       await fetch(WEBHOOK_URL, {
@@ -200,6 +359,29 @@
     } catch (e) {
       console.log('Ошибка отправки:', e);
     }
+  }
+
+  function showSecret() {
+    document.getElementById('secretOverlay').classList.add('active');
+    for (let i = 0; i < 50; i++) {
+      setTimeout(() => createConfetti(), i * 30);
+    }
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+  }
+
+  function closeSecret() {
+    document.getElementById('secretOverlay').classList.remove('active');
+  }
+
+  function createConfetti() {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.textContent = ['💖','💕','💗','✨','🌟','💛','🎉','🌸'][Math.floor(Math.random()*8)];
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.top = '-50px';
+    el.style.fontSize = (Math.random() * 1.5 + 1) + 'em';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
   }
 
   function createHeart() {
